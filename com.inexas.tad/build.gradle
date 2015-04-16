@@ -1,0 +1,95 @@
+/**
+ * build.gradle
+ */
+
+def PROJECT_NAME = 'TAD'
+def PROJECT_NAME_LOWER = 'tad'
+def PROJECT_VENDOR = 'Inexas'
+def PROJECT_GROUP = 'inexas'
+def PROJECT_VERSION = '0.1.0'
+def PROJECT_DESCRIPTION = 'Thread Attached Data'
+
+// Compiler configuration
+def PROJECT_JAVA_VERSION = '1.8'
+
+apply plugin: 'java'
+// Gradle info, see .../build/reports/project/ dependencies, properties, tasks
+apply plugin: 'project-report'	// For lots of reports
+apply plugin: 'eclipse'			// To be able to create an Eclipse project
+apply plugin: 'eclipse-wtp'		// To update Eclipse WTP profile
+apply plugin: 'war'				// To build a war file
+apply plugin: 'jetty'			// To allow it to run on a web server
+apply plugin:'application'		// To add a run task
+
+defaultTasks 'compileTestJava'	
+
+repositories {
+	flatDir { dirs LocalRepository }
+	mavenCentral()
+}
+
+group = PROJECT_GROUP
+version = PROJECT_VERSION
+sourceCompatibility = PROJECT_JAVA_VERSION
+description = PROJECT_DESCRIPTION
+
+archivesBaseName = PROJECT_NAME_LOWER
+
+sourceSets {
+	main {
+		java {
+			srcDir 'src'
+		}
+		resources {
+			srcDir 'resources'
+		}
+	}
+	test {
+		java {
+			srcDir 'srctest'
+		}
+		resources {
+			srcDir 'resourcestest'
+		}
+	}
+}
+
+// Application task...
+mainClassName = "hello.HelloWorld"   
+//applicationDefaultJvmArgs = ["-Dgreeting.language=en"]
+
+test {
+	enableAssertions true
+}
+
+war {
+	webAppDirName = 'WebContent'
+}	
+
+jar {
+	manifest {
+		attributes(
+			// todo "Name": "PROJECT_DESCRIPTION",
+			"Specification-Title": PROJECT_DESCRIPTION,
+			"Specification-Version": PROJECT_VERSION,
+			"Specification-Vendor": PROJECT_VENDOR,
+			"Implementation-Title": PROJECT_DESCRIPTION,
+			"Implementation-Version": PROJECT_VERSION,
+			"Implementation-Vendor": PROJECT_VENDOR)
+	}
+}
+
+dependencies {
+	compile 'org.slf4j:slf4j-api:1.7.5'
+	compile 'com.google.inject:guice:3.0'
+	compile 'javax.mail:mail:1.4.7'
+	testCompile 'junit:junit:4.11'
+}
+
+uploadArchives {
+	repositories {
+	   flatDir {
+		   dirs 'repos'
+	   }
+	}
+}
