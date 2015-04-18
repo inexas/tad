@@ -10,6 +10,11 @@
 package com.inexas.tad;
 
 /**
+ * TAD runtime exception is thrown in critical situations where the application
+ * cannot recover. Situations are typically the results of programmer errors
+ * such as adding the same TAD twice, expecting TADs to be there when they
+ * aren't, etc.
+ *
  * @author kwhittingham
  */
 public class TadRuntimeException extends RuntimeException {

@@ -13,12 +13,14 @@ import java.util.*;
 import java.util.Map.Entry;
 
 /**
- * Thread Attached Data (TAD) Context provides the interface that allows data to
- * be attached to, retrieved and removed from the current thread's context.
+ * The Thread Attached Data (TAD) Context provides the interface that allows
+ * data to be attached to, retrieved and removed from the current thread's
+ * context.
  *
- * todo Add searches ClassThatImplementsInterface getService(Interface)
  */
 public class Context {
+	// todo Add searches ClassThatImplementsInterface getService(Interface)
+
 	/**
 	 * Elements are used to implement the experimental stacked-TAD capability
 	 */
@@ -76,8 +78,7 @@ public class Context {
 	}
 
 	/**
-	 * Attach Thread Attached Data (TAD) class with the current thread using the
-	 * TAD's class as a key.
+	 * Attach a TAD class to the current thread using the TAD's class as a key.
 	 *
 	 * @param tad
 	 *            Any class implementing the Tad interface.
@@ -89,27 +90,28 @@ public class Context {
 	}
 
 	/**
-	 * Attach a TAD with the current thread mapped to an explicit key.
+	 * Attach a TAD class to the current thread mapped to an explicit key.
 	 *
 	 * @param keyClass
 	 *            The key class to attached the data object with. Typically this
 	 *            will be an interface of the Tad class.
 	 * @param tad
-	 *            Any class implementing the Tad interface
+	 *            Any class implementing the Tad interface.
 	 */
 	public static synchronized void attach(Class<?> keyClass, Tad tad) {
 		attach(keyClass, tad, false);
 	}
 
 	/**
-	 * Attach a TAD with the current thread using a stack metaphor. Stacks can
-	 * be used or not used for a given TAD key. Don't mix calls to attach() and
-	 * pushAttach().
+	 * Attach a TAD class to the current thread using a stack metaphor. Stacks
+	 * must either be used all the time or not used at all for a given TAD
+	 * key/thread. That is don't mix calls to attach() and pushAttach().
 	 *
 	 * @param tad
 	 *            Any class implementing the Tad interface.
 	 * @deprecated This is experimental functionality which may be excluded in a
-	 *             future version.
+	 *             future version. If you think it should remain in the library,
+	 *             let us know.
 	 */
 	@Deprecated
 	public static synchronized void pushAttach(Tad tad) {
@@ -119,10 +121,12 @@ public class Context {
 	}
 
 	/**
-	 * Get object attached with a given TAD key class.
+	 * Get TAD mapped to a given TAD key class.
 	 *
 	 * @param keyClass
 	 *            The key of the TAD object to retrieve.
+	 * @param <T>
+	 *            A type implementing the Tad interface.
 	 * @return The TAD attached with the given keyClass.
 	 * @throws TadRuntimeException
 	 *             Thrown if no corresponding object for the keyClass is found.
@@ -160,10 +164,12 @@ public class Context {
 	 * Return an object attached with a TAD class. If the object is not found
 	 * then null is returned
 	 *
+	 * @see #get(Class)
 	 * @param tadClass
-	 *            the TAD class to search for
+	 *            The TAD class to search for.
+	 * @param <T>
+	 *            A type implementing the Tad interface.
 	 * @return the object or null
-	 * @see #getOrThrow(Class<? extends Tad>)
 	 */
 	public static <T extends Tad> T getButDontThrow(Class<? extends Tad> tadClass) {
 		final T result;
@@ -245,10 +251,11 @@ public class Context {
 	/**
 	 * Dissociate Thread Attached Data from current Thread.
 	 *
+	 * @param keyClass
+	 *            The key class used to associated the TAD.
 	 * @param tad
 	 *            An Object implementing the Tad interface previously attached
 	 *            with the current thread.
-	 * @throws
 	 */
 	public static synchronized void detach(Class<?> keyClass, Tad tad) {
 		assert keyClass != null;
@@ -284,7 +291,7 @@ public class Context {
 
 	/**
 	 * @deprecated Deprecated because it's bad practice but you can trust it
-	 *             will always be here. I added this method for use in unit
+	 *             will always be here. The method was added for use in unit
 	 *             tests.
 	 */
 	@Deprecated

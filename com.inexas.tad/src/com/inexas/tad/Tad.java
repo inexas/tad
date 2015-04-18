@@ -10,15 +10,17 @@
 package com.inexas.tad;
 
 /**
- * Implement this class in a class that you want to associate with a Thread
- *
- * ?todo We could do away with the restriction of having to implement Tad
- * however I have found it useful to identify which classes are to be used as
- * TADs and it does provide some type safety.
+ * Implement this interface in a class that you want to associate with a Thread.
  *
  * @author kwhittingham
  *
  */
 public interface Tad {
+	/*
+	 * ?todo We could do away with the restriction of having to implement Tad
+	 * however I have found it useful to identify which classes are to be used
+	 * as TADs and it does provide some type safety.
+	 */
+
 	// Nothing to do, just a marker interface
 }

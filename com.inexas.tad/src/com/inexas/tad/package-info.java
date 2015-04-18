@@ -8,8 +8,8 @@
  * See http://www.inexas.com/license for license details.
  */
 /**
- * Thread Attached Data (TAD) provides a (very) lightweight alternative to
- * dependency injection that lets you share data in a single thread.
+ * Thread Attached Data (TAD) provides a (very) lightweight alternative to/add-on
+ * dependency injection that lets you share data within a single thread.
  *
  * @author kwhittingham
  */

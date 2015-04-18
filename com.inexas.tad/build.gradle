@@ -2,38 +2,83 @@
  * build.gradle
  */
 
+// todo
+// * artifactId
+
 def PROJECT_NAME = 'TAD'
-def PROJECT_NAME_LOWER = 'tad'
 def PROJECT_VENDOR = 'Inexas'
-def PROJECT_GROUP = 'inexas'
+def PROJECT_GROUP = 'org.inexas'
+def ARCHIVE_BASE_NAME = 'inexas-tad'
 def PROJECT_VERSION = '0.1.0'
 def PROJECT_DESCRIPTION = 'Thread Attached Data'
+def PROJECT_URL = 'https://github.com/inexas/tad'
+def PROJECT_SCM = 'scm:git@github.com/inexas/tad.git'
+def LICENSE_NAME = 'Inexas - Free or Near Free Software License, Version 1.0'
+def LICENSE_URL = 'http://www.inexas.org/licenses/LICENSE-1.0.txt'
+
+// See also
+// * Developers /uploadArchives/repositories/mavenDeployer/pom.project/developers for list of
+//   developers
+// * ~/.gradle/gradle.properties for OSS repository user ID and password
+
 
 // Compiler configuration
-def PROJECT_JAVA_VERSION = '1.8'
+def JAVA_VERSION = '1.8'
+
 
 apply plugin: 'java'
-// Gradle info, see .../build/reports/project/ dependencies, properties, tasks
 apply plugin: 'project-report'	// For lots of reports
+								// Gradle info, see .../build/reports/project/ dependencies, properties, tasks
 apply plugin: 'eclipse'			// To be able to create an Eclipse project
-apply plugin: 'eclipse-wtp'		// To update Eclipse WTP profile
-apply plugin: 'war'				// To build a war file
-apply plugin: 'jetty'			// To allow it to run on a web server
-apply plugin:'application'		// To add a run task
+apply plugin: 'application'		// To add a run task
 
-defaultTasks 'compileTestJava'	
+								// For OSS Repository
+apply plugin:'maven'
+apply plugin:'signing'
 
-repositories {
-	flatDir { dirs LocalRepository }
-	mavenCentral()
+
+defaultTasks 'compileTestJava'	// Defines what to do if you type "gradle" on its own
+
+repositories {					// Where to look for dependencies (see apply's above)
+	flatDir {
+		dirs LocalRepository	// Defined in ~/.gradle/gradle.properties
+	}
+	mavenCentral()				// http://central.sonatype.org/
 }
+
+dependencies {
+	// compile 'org.slf4j:slf4j-api:1.7.5'
+	// compile 'com.google.inject:guice:3.0'
+	// compile 'javax.mail:mail:1.4.7'
+								// Latest 4.* version
+	testCompile group: 'junit', name: 'junit', version: '4.+'
+}
+
+// J a v a
+
+sourceCompatibility = JAVA_VERSION
+
+
+// J A  R   f i l e
 
 group = PROJECT_GROUP
 version = PROJECT_VERSION
-sourceCompatibility = PROJECT_JAVA_VERSION
 description = PROJECT_DESCRIPTION
+archivesBaseName = ARCHIVE_BASE_NAME
 
-archivesBaseName = PROJECT_NAME_LOWER
+jar {
+	manifest {
+		attributes(
+			'Specification-Title': PROJECT_NAME,
+			'Specification-Version': PROJECT_VERSION,
+			'Specification-Vendor': PROJECT_VENDOR,
+			'Implementation-Title': PROJECT_DESCRIPTION,
+			'Implementation-Version': PROJECT_VERSION,
+			'Implementation-Vendor': PROJECT_VENDOR)
+	}
+}
+
+
 
 sourceSets {
 	main {
@@ -55,41 +100,87 @@ sourceSets {
 }
 
 // Application task...
-mainClassName = "hello.HelloWorld"   
+//mainClassName = "hello.HelloWorld"   
 //applicationDefaultJvmArgs = ["-Dgreeting.language=en"]
 
 test {
 	enableAssertions true
 }
 
-war {
-	webAppDirName = 'WebContent'
-}	
 
-jar {
-	manifest {
-		attributes(
-			// todo "Name": "PROJECT_DESCRIPTION",
-			"Specification-Title": PROJECT_DESCRIPTION,
-			"Specification-Version": PROJECT_VERSION,
-			"Specification-Vendor": PROJECT_VENDOR,
-			"Implementation-Title": PROJECT_DESCRIPTION,
-			"Implementation-Version": PROJECT_VERSION,
-			"Implementation-Vendor": PROJECT_VENDOR)
-	}
-}
-
-dependencies {
-	compile 'org.slf4j:slf4j-api:1.7.5'
-	compile 'com.google.inject:guice:3.0'
-	compile 'javax.mail:mail:1.4.7'
-	testCompile 'junit:junit:4.11'
-}
-
+// ??? What is this for
 uploadArchives {
 	repositories {
 	   flatDir {
 		   dirs 'repos'
 	   }
+	}
+}
+
+
+// The following are for deploying to the OSS Repository...
+ 
+task javadocJar(type: Jar) {
+	classifier = 'javadoc'
+	from javadoc
+}
+
+task sourcesJar(type: Jar) {
+	classifier = 'sources'
+	from sourceSets.main.allSource
+}
+
+artifacts {
+	archives javadocJar, sourcesJar
+}
+
+signing {
+	sign configurations.archives
+}
+
+uploadArchives {
+	repositories {
+		mavenDeployer {
+			beforeDeployment {
+				MavenDeployment deployment -> signing.signPom(deployment)
+			}
+		
+			repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+				authentication(userName: ossUsername, password: ossPassword)
+			}
+
+			snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+				authentication(userName: ossUsername, password: ossPassword)
+			}
+	
+			pom.project {
+				name PROJECT_NAME
+				packaging 'jar'
+				// artifactId
+				description PROJECT_DESCRIPTION
+				url PROJECT_URL
+			
+				scm {
+					url PROJECT_SCM
+					connection PROJECT_SCM
+					developerConnection PROJECT_SCM
+				}
+				
+				licenses {
+					license {
+						name LICENSE_NAME
+						url LICENSE_URL
+						distribution 'repo' // ???
+					}
+				}
+				
+				developers {
+					developer {
+						id 'kwhittingham'
+						name 'Keith Whittingham'
+					}
+				}
+			}
+		}
 	}
 }
