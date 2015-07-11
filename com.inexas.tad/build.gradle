@@ -63,7 +63,7 @@ signing {
     sign configurations.archives
 }
 
-sourceSets {
+sourceSets {g 
 	main {
 		java {
 			srcDir 'src'
