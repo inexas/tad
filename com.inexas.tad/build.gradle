@@ -22,8 +22,6 @@ def PROJECT_DESCRIPTION = 'TAD - Thread Attached Data'
 def PROJECT_URL = 'http://www.inexas.org'
 def PROJECT_JAVA_VERSION = '1.8'
 
-// J A  R   f i l e
-
 group = PROJECT_GROUP
 version = PROJECT_VERSION
 description = PROJECT_DESCRIPTION
@@ -92,7 +90,7 @@ jar {
 }
 
 dependencies {
-	testCompile group: 'junit', name: 'junit', version: '4.+'
+	testCompile 'junit:junit:4.11'
 }
 
 uploadArchives {
