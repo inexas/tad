@@ -14,7 +14,7 @@ package com.inexas.tad;
  *
  * @author kwhittingham
  */
-public class SampleTad implements NamingService, Tad {
+public class SampleTad implements NamingService {
 	private final String name;
 
 	public SampleTad(String name) {

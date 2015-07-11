@@ -19,7 +19,7 @@ import org.junit.Test;
  * calls System.exit() before the thread has had chance to run
  */
 
-public class TestTadContext {
+public class TestTadContext implements Tad {
 
 	private class SomeOtherThread extends Thread {
 		boolean ran;
@@ -41,7 +41,7 @@ public class TestTadContext {
 		assertEquals(name, found.getName());
 	}
 
-	private void checkThisThreadThreadSeesTheTad(Class<?> keyClass, String name) {
+	private void checkThisThreadThreadSeesTheTad(Class<? extends Tad> keyClass, String name) {
 		final SampleTad found = (SampleTad)Context.get(keyClass);
 		assertEquals(name, found.getName());
 	}
@@ -107,7 +107,7 @@ public class TestTadContext {
 		 * You can attach as many TAD classes as you want to the Thread.
 		 * Normally they would be of different classes but in this case we'll
 		 * add two instances of the same class twice.
-		 * 
+		 *
 		 * The simple attach(Tad) method uses the class of the TAD object as the
 		 * key to retrieve it. Since we can't use the same key for two objects
 		 * we'll use an explicit key for tad2. You can use any class you like,

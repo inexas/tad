@@ -131,7 +131,7 @@ public class Context {
 	 * @throws TadRuntimeException
 	 *             Thrown if no corresponding object for the keyClass is found.
 	 */
-	public static <T extends Tad> T get(Class<?> keyClass) throws TadRuntimeException {
+	public static <T extends Tad> T get(Class<? extends Tad> keyClass) throws TadRuntimeException {
 		final T result;
 
 		final Long threadId = new Long(Thread.currentThread().getId());
@@ -165,13 +165,13 @@ public class Context {
 	 * then null is returned
 	 *
 	 * @see #get(Class)
-	 * @param tadClass
-	 *            The TAD class to search for.
+	 * @param keyClass
+	 *            The key class of the TAD to search for.
 	 * @param <T>
 	 *            A type implementing the Tad interface.
-	 * @return the object or null
+	 * @return The TAD attached with the given keyClass or null.
 	 */
-	public static <T extends Tad> T getButDontThrow(Class<? extends Tad> tadClass) {
+	public static <T extends Tad> T getButDontThrow(Class<? extends Tad> keyClass) {
 		final T result;
 
 		final Long threadId = new Long(Thread.currentThread().getId());
@@ -179,7 +179,7 @@ public class Context {
 		if(tads == null) {
 			result = null;
 		} else {
-			final Tad tad = tads.get(tadClass);
+			final Tad tad = tads.get(keyClass);
 			if(tad == null) {
 				result = null;
 			} else {

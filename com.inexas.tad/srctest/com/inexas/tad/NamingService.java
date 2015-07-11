@@ -13,6 +13,6 @@ package com.inexas.tad;
 /**
  * @author kwhittingham
  */
-public interface NamingService {
+public interface NamingService extends Tad {
 	String getName();
 }
