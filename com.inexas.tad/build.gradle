@@ -17,7 +17,7 @@ def PROJECT_NAME = 'TAD'
 def PROJECT_NAME_LOWER = 'tad'
 def PROJECT_VENDOR = 'Inexas'
 def PROJECT_GROUP = 'com.inexas'
-def PROJECT_VERSION = '0.1.0'
+def PROJECT_VERSION = '0.1.1'
 def PROJECT_DESCRIPTION = 'TAD - Thread Attached Data'
 def PROJECT_URL = 'http://www.inexas.org'
 def PROJECT_JAVA_VERSION = '1.8'
@@ -29,7 +29,7 @@ sourceCompatibility = PROJECT_JAVA_VERSION
 archivesBaseName = PROJECT_NAME_LOWER
 
 
-defaultTasks 'compileTestJava'	// Defines what to do if you type "gradle" on its own
+defaultTasks 'tasks'
 
 test {
 	enableAssertions true

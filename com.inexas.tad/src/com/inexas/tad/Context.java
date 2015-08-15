@@ -107,16 +107,19 @@ public class Context {
 	 * must either be used all the time or not used at all for a given TAD
 	 * key/thread. That is don't mix calls to attach() and pushAttach().
 	 *
+	 * This is also useful when the code is reentrant.
+	 *
 	 * @param tad
 	 *            Any class implementing the Tad interface.
-	 * @deprecated This is experimental functionality which may be excluded in a
-	 *             future version. If you think it should remain in the library,
-	 *             let us know.
 	 */
-	@Deprecated
 	public static synchronized void pushAttach(Tad tad) {
 		assert tad != null : "Null TAD";
 
+		/*
+		 * KW One use of this is when it is not know if the TAD has already been
+		 * attached then it can be pushAttached and and removed safely. Set
+		 * Oak.java for an example
+		 */
 		attach(tad.getClass(), tad, true);
 	}
 
@@ -243,8 +246,8 @@ public class Context {
 				tads.put(keyClass, nextInChain);
 			}
 			removed = link.tad;
-		} else if(removed == tad) {
-			//
+		} else {
+			assert removed == tad;
 		}
 	}
 

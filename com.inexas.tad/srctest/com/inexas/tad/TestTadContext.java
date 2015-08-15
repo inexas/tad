@@ -107,7 +107,7 @@ public class TestTadContext implements Tad {
 		 * You can attach as many TAD classes as you want to the Thread.
 		 * Normally they would be of different classes but in this case we'll
 		 * add two instances of the same class twice.
-		 *
+		 * 
 		 * The simple attach(Tad) method uses the class of the TAD object as the
 		 * key to retrieve it. Since we can't use the same key for two objects
 		 * we'll use an explicit key for tad2. You can use any class you like,
@@ -171,7 +171,6 @@ public class TestTadContext implements Tad {
 	 * current value for a given key, replace it, then when done, attaching the
 	 * original value but it's a bit messy.
 	 */
-	@SuppressWarnings("deprecation")
 	@Test
 	public void stack() {
 		final String name1 = "tad1";
