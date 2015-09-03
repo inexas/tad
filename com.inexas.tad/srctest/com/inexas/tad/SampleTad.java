@@ -11,8 +11,6 @@ package com.inexas.tad;
 
 /**
  * This is a test TAD class that is used in tests. See the TestXxx files.
- *
- * @author kwhittingham
  */
 public class SampleTad implements NamingService {
 	private final String name;

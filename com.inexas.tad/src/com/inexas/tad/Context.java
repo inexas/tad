@@ -42,7 +42,13 @@ public class Context {
 	 * Element if the user has elected to use a stack of TADs.
 	 */
 
-	private final static Map<Long, Map<Class<?>, Tad>> map = new HashMap<>();
+	private final static Map<Long, Map<Class<?>, Tad>> threadMap = new HashMap<>();
+
+	/**
+	 * This stores all published TADs in a simple Map.
+	 */
+
+	private final static Map<Class<?>, Tad> globalMap = new HashMap<>();
 
 	/** In honor of Pulp Fiction. */
 	private final static String winstonWolfe = "Winston Wolfe";
@@ -66,16 +72,21 @@ public class Context {
 		public synchronized void run() {
 			try {
 				thread.join();
-				final Map<Class<?>, Tad> tads = map.get(threadId);
+				final Map<Class<?>, Tad> tads = threadMap.get(threadId);
 				if(!tads.isEmpty()) {
 					throw new TadRuntimeException("TADs still attached: " + tads.keySet());
 				}
-				map.remove(threadId);
+				threadMap.remove(threadId);
 			} catch(final InterruptedException e) {
 				throw new TadRuntimeException("Join interrupted", e);
 			}
 		}
 	}
+
+	/**
+	 * Used to flag if a shutdown hook has been set up.
+	 */
+	private static boolean hooked;
 
 	/**
 	 * Attach a TAD class to the current thread using the TAD's class as a key.
@@ -135,32 +146,7 @@ public class Context {
 	 *             Thrown if no corresponding object for the keyClass is found.
 	 */
 	public static <T extends Tad> T get(Class<? extends Tad> keyClass) throws TadRuntimeException {
-		final T result;
-
-		final Long threadId = new Long(Thread.currentThread().getId());
-		final Map<Class<?>, Tad> tads = map.get(threadId);
-		if(tads == null) {
-			throw new TadRuntimeException(
-					"This thread has no Thread Attached Data for: " + keyClass.getName());
-		}
-
-		final Tad tad = tads.get(keyClass);
-		if(tad == null) {
-			throw new TadRuntimeException(
-					"This thread has no Thread Attached Data for: " + keyClass.getName());
-		}
-
-		if(tad.getClass() == Element.class) {
-			@SuppressWarnings("unchecked")
-			final T t = (T)((Element)tad).tad;
-			result = t;
-		} else {
-			@SuppressWarnings("unchecked")
-			final T t = (T)tad;
-			result = t;
-		}
-
-		return result;
+		return get(keyClass, true);
 	}
 
 	/**
@@ -175,34 +161,11 @@ public class Context {
 	 * @return The TAD attached with the given keyClass or null.
 	 */
 	public static <T extends Tad> T getButDontThrow(Class<? extends Tad> keyClass) {
-		final T result;
-
-		final Long threadId = new Long(Thread.currentThread().getId());
-		final Map<Class<?>, Tad> tads = map.get(threadId);
-		if(tads == null) {
-			result = null;
-		} else {
-			final Tad tad = tads.get(keyClass);
-			if(tad == null) {
-				result = null;
-			} else {
-				if(tad.getClass() == Element.class) {
-					@SuppressWarnings("unchecked")
-					final T t = (T)((Element)tad).tad;
-					result = t;
-				} else {
-					@SuppressWarnings("unchecked")
-					final T t = (T)tad;
-					result = t;
-				}
-			}
-		}
-
-		return result;
+		return get(keyClass, false);
 	}
 
 	/**
-	 * Dissociate Thread Attached Data.
+	 * Detach Thread Attached Data.
 	 *
 	 * @param tad
 	 *            A class implementing the Tad interface previously attached
@@ -212,7 +175,7 @@ public class Context {
 		assert tad != null : "Null TAD??";
 
 		final Long threadId = new Long(Thread.currentThread().getId());
-		final Map<Class<?>, Tad> tads = map.get(threadId);
+		final Map<Class<?>, Tad> tads = threadMap.get(threadId);
 		if(tads == null) {
 			throw new TadRuntimeException("No TADs stored for this class");
 		}
@@ -252,10 +215,10 @@ public class Context {
 	}
 
 	/**
-	 * Dissociate Thread Attached Data from current Thread.
+	 * Detach Thread Attached Data from current Thread.
 	 *
 	 * @param keyClass
-	 *            The key class used to associated the TAD.
+	 *            The key class used to attach the TAD.
 	 * @param tad
 	 *            An Object implementing the Tad interface previously attached
 	 *            with the current thread.
@@ -266,7 +229,7 @@ public class Context {
 
 		final Long threadId = new Long(Thread.currentThread().getId());
 
-		final Map<Class<?>, Tad> tads = map.get(threadId);
+		final Map<Class<?>, Tad> tads = threadMap.get(threadId);
 		if(tads == null) {
 			throw new TadRuntimeException(
 					"This thread has no Thread Attached Data for key: " + keyClass.getName());
@@ -293,6 +256,8 @@ public class Context {
 	}
 
 	/**
+	 * Detach all TADs for current thread.
+	 *
 	 * @deprecated Deprecated because it's bad practice but you can trust it
 	 *             will always be here. The method was added for use in unit
 	 *             tests.
@@ -300,10 +265,90 @@ public class Context {
 	@Deprecated
 	public static synchronized void detachAll() {
 		final Long threadId = new Long(Thread.currentThread().getId());
-		final Map<Class<?>, Tad> tads = map.get(threadId);
+		final Map<Class<?>, Tad> tads = threadMap.get(threadId);
 		if(tads != null) {
 			// Leave the Map in place but empty
 			tads.clear();
+		}
+	}
+
+	/**
+	 * Publish a TAD class globally using the TAD's class as a key.
+	 *
+	 * @param tad
+	 *            Any class implementing the Tad interface.
+	 */
+	public static synchronized void publish(Tad tad) {
+		assert tad != null : "Null TAD";
+
+		publish(tad.getClass(), tad);
+	}
+
+	/**
+	 * Publish a TAD class globally mapped to an explicit key.
+	 *
+	 * @param keyClass
+	 *            The key class to be published. Typically this will be an
+	 *            interface of the Tad class.
+	 * @param tad
+	 *            Any class implementing the Tad interface.
+	 */
+	public static synchronized void publish(Class<?> keyClass, Tad tad) {
+		assert keyClass != null : "Null keyClass";
+		assert tad != null : "Null TAD";
+
+		if(globalMap.containsKey(keyClass)) {
+			throw new TadRuntimeException(
+					"Thread already has TAD published for key: " + keyClass.getName());
+		}
+
+		globalMap.put(keyClass, tad);
+
+		if(!hooked) {
+			Runtime.getRuntime().addShutdownHook(new Thread() {
+				@Override
+				public void run() {
+					if(!globalMap.isEmpty()) {
+						throw new TadRuntimeException("TADs still published: " + globalMap.keySet());
+					}
+				}
+			});
+			hooked = true;
+		}
+	}
+
+	/**
+	 * Unpublish global data object.
+	 *
+	 * @param tad
+	 *            A class implementing the Tad interface previously published.
+	 */
+	public static synchronized void unpublish(Tad tad) {
+		assert tad != null : "Null TAD??";
+
+		unpublish(tad.getClass(), tad);
+	}
+
+	/**
+	 * Unpublish global data object.
+	 *
+	 * @param keyClass
+	 *            The key class used to publish the TAD.
+	 * @param tad
+	 *            An Object implementing the Tad interface previously published.
+	 */
+	public static synchronized void unpublish(Class<?> keyClass, Tad tad) {
+		assert keyClass != null;
+		assert tad != null : "Null TAD??";
+
+		final Tad removed = globalMap.remove(keyClass);
+		if(removed == null) {
+			throw new TadRuntimeException("No TAD published for " + keyClass.getName());
+		}
+
+		if(removed != tad) {
+			throw new TadRuntimeException(
+					"Another object of the same type was published: " + tad.getClass().getName());
 		}
 	}
 
@@ -316,13 +361,13 @@ public class Context {
 
 		final Thread thread = Thread.currentThread();
 		final Long threadId = new Long(thread.getId());
-		Map<Class<?>, Tad> tads = map.get(threadId);
+		Map<Class<?>, Tad> tads = threadMap.get(threadId);
 		if(tads == null) {
 			// First attach for this thread
 
 			// Create a new Map for this Thread...
 			tads = new HashMap<>();
-			map.put(threadId, tads);
+			threadMap.put(threadId, tads);
 
 			// Start a Cleaner...
 			final Thread cleaner = new Thread(new Cleaner(thread, threadId), winstonWolfe);
@@ -355,6 +400,46 @@ public class Context {
 				}
 			}
 		}
+	}
+
+	private static <T extends Tad> T getPublished(Class<? extends Tad> keyClass, boolean strict)
+			throws TadRuntimeException {
+
+		@SuppressWarnings("unchecked")
+		final T result = (T)globalMap.get(keyClass);
+		if(result == null && strict) {
+			throw new TadRuntimeException(
+					"Thread attached or published data for: " + keyClass.getName());
+		}
+
+		return result;
+	}
+
+	private static <T extends Tad> T get(Class<? extends Tad> keyClass, boolean strict) {
+		final T result;
+
+		final Long threadId = new Long(Thread.currentThread().getId());
+		final Map<Class<?>, Tad> tads = threadMap.get(threadId);
+		if(tads == null) {
+			result = getPublished(keyClass, strict);
+		} else {
+			final Tad tad = tads.get(keyClass);
+			if(tad == null) {
+				result = getPublished(keyClass, strict);
+			} else {
+				if(tad.getClass() == Element.class) {
+					@SuppressWarnings("unchecked")
+					final T t = (T)((Element)tad).tad;
+					result = t;
+				} else {
+					@SuppressWarnings("unchecked")
+					final T t = (T)tad;
+					result = t;
+				}
+			}
+		}
+
+		return result;
 	}
 
 }

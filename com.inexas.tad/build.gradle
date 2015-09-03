@@ -17,7 +17,7 @@ def PROJECT_NAME = 'TAD'
 def PROJECT_NAME_LOWER = 'tad'
 def PROJECT_VENDOR = 'Inexas'
 def PROJECT_GROUP = 'com.inexas'
-def PROJECT_VERSION = '0.1.1'
+def PROJECT_VERSION = '0.1.2'
 def PROJECT_DESCRIPTION = 'TAD - Thread Attached Data'
 def PROJECT_URL = 'http://www.inexas.org'
 def PROJECT_JAVA_VERSION = '1.8'
@@ -66,13 +66,13 @@ sourceSets {g
 		java {
 			srcDir 'src'
 		}
-		java {
-			srcDir 'srcgen'
-		}
 	}
 	test {
 		java {
 			srcDir 'srctest'
+		}
+		java {
+			srcDir 'srcexample'
 		}
 	}
 }

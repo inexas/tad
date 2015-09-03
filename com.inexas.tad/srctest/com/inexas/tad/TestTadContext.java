@@ -107,7 +107,7 @@ public class TestTadContext implements Tad {
 		 * You can attach as many TAD classes as you want to the Thread.
 		 * Normally they would be of different classes but in this case we'll
 		 * add two instances of the same class twice.
-		 * 
+		 *
 		 * The simple attach(Tad) method uses the class of the TAD object as the
 		 * key to retrieve it. Since we can't use the same key for two objects
 		 * we'll use an explicit key for tad2. You can use any class you like,
@@ -196,6 +196,26 @@ public class TestTadContext implements Tad {
 
 		Context.detach(peeked3);
 		assertNull(Context.getButDontThrow(SampleTad.class));
+	}
+
+	@Test
+	public void globals() {
+		final SampleTad threadTad = new SampleTad("thread");
+		final SampleTad globalTad = new SampleTad("global");
+
+		// Publish a global
+		Context.publish(globalTad);
+		assertEquals(globalTad, Context.get(SampleTad.class));
+
+		// Attach a TAD, this should hide the global
+		Context.attach(threadTad);
+		assertEquals(threadTad, Context.get(SampleTad.class));
+
+		// Detach the TAD, this should expose the global again
+		Context.detach(threadTad);
+		assertEquals(globalTad, Context.get(SampleTad.class));
+
+		Context.unpublish(globalTad);
 	}
 
 }
