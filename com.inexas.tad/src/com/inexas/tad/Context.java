@@ -409,7 +409,7 @@ public class Context {
 		final T result = (T)globalMap.get(keyClass);
 		if(result == null && strict) {
 			throw new TadRuntimeException(
-					"Thread attached or published data for: " + keyClass.getName());
+					"Missing thread attached or published data for: " + keyClass.getName());
 		}
 
 		return result;
