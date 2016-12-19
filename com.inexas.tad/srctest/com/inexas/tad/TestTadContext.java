@@ -27,7 +27,7 @@ public class TestTadContext implements Tad {
 		@Override
 		public void run() {
 			synchronized(this) {
-				if(Context.getButDontThrow(SampleTad.class) != null) {
+				if(TadContext.getButDontThrow(SampleTad.class) != null) {
 					fail("Another Thread saw the TAD");
 				}
 				ran = true;
@@ -37,12 +37,12 @@ public class TestTadContext implements Tad {
 	}
 
 	private void checkThisThreadThreadSeesTheTad(String name) {
-		final SampleTad found = (SampleTad)Context.get(SampleTad.class);
+		final SampleTad found = (SampleTad)TadContext.get(SampleTad.class);
 		assertEquals(name, found.getName());
 	}
 
 	private void checkThisThreadThreadSeesTheTad(Class<? extends Tad> keyClass, String name) {
-		final SampleTad found = (SampleTad)Context.get(keyClass);
+		final SampleTad found = (SampleTad)TadContext.get(keyClass);
 		assertEquals(name, found.getName());
 	}
 
@@ -80,13 +80,13 @@ public class TestTadContext implements Tad {
 		 * without attaching it first, getButDontThrow(...) will return null but
 		 * get(...) with throw a RuntimeException
 		 */
-		assertNull(Context.getButDontThrow(SampleTad.class));
+		assertNull(TadContext.getButDontThrow(SampleTad.class));
 		checkSomeOtherThreadDoesntSeeTheTad();
 
 		/*
 		 * Now we attach testTad
 		 */
-		Context.attach(testTad);
+		TadContext.attach(testTad);
 		checkThisThreadThreadSeesTheTad(name);
 		checkSomeOtherThreadDoesntSeeTheTad();
 
@@ -94,8 +94,8 @@ public class TestTadContext implements Tad {
 		 * A Thread that attaches a TAD class <b>must</b> detach it too and it's
 		 * good practice to do it in the same method.
 		 */
-		Context.detach(testTad);
-		assertNull(Context.getButDontThrow(SampleTad.class));
+		TadContext.detach(testTad);
+		assertNull(TadContext.getButDontThrow(SampleTad.class));
 	}
 
 	@Test
@@ -114,16 +114,16 @@ public class TestTadContext implements Tad {
 		 * we'll arbitrarily use TestTadContext.class.
 		 */
 		final SampleTad tad1 = new SampleTad(name1);
-		Context.attach(tad1);
+		TadContext.attach(tad1);
 		final SampleTad tad2 = new SampleTad(name2);
-		Context.attach(TestTadContext.class, tad2);
+		TadContext.attach(TestTadContext.class, tad2);
 
 		checkThisThreadThreadSeesTheTad(name1);
 		checkThisThreadThreadSeesTheTad(TestTadContext.class, name2);
 		checkSomeOtherThreadDoesntSeeTheTad();
 
-		Context.detach(tad1);
-		Context.detach(TestTadContext.class, tad2);
+		TadContext.detach(tad1);
+		TadContext.detach(TestTadContext.class, tad2);
 	}
 
 	@Test
@@ -140,23 +140,23 @@ public class TestTadContext implements Tad {
 		 * interface.
 		 */
 		final SampleTad serviceImpl = new SampleTad(name);
-		Context.attach(NamingService.class, serviceImpl);
+		TadContext.attach(NamingService.class, serviceImpl);
 
 		// Elsewhere in the code...
-		assertTrue(Context.get(NamingService.class) == serviceImpl);
+		assertTrue(TadContext.get(NamingService.class) == serviceImpl);
 
 		// Once we're done, dismantle..
-		Context.detach(serviceImpl);
+		TadContext.detach(serviceImpl);
 	}
 
 	@Test(expected = TadRuntimeException.class)
 	public void testGetWithNoTad() {
-		Context.get(SampleTad.class);
+		TadContext.get(SampleTad.class);
 	}
 
 	@Test
 	public void testGetWithNoTadWithoutThrow() {
-		assertNull(Context.getButDontThrow(SampleTad.class));
+		assertNull(TadContext.getButDontThrow(SampleTad.class));
 	}
 
 	/**
@@ -177,25 +177,25 @@ public class TestTadContext implements Tad {
 		final String name2 = "tad2";
 
 		final SampleTad tad1 = new SampleTad(name1);
-		Context.pushAttach(tad1);
+		TadContext.pushAttach(tad1);
 
-		final SampleTad peeked1 = (SampleTad)Context.get(SampleTad.class);
+		final SampleTad peeked1 = (SampleTad)TadContext.get(SampleTad.class);
 		assertNotNull(peeked1);
 		assertEquals(name1, peeked1.getName());
 
 		final SampleTad tad2 = new SampleTad(name2);
-		Context.pushAttach(tad2);
+		TadContext.pushAttach(tad2);
 
-		final SampleTad peeked2 = (SampleTad)Context.get(SampleTad.class);
+		final SampleTad peeked2 = (SampleTad)TadContext.get(SampleTad.class);
 		assertNotNull(peeked2);
 		assertEquals(name2, peeked2.getName());
 
-		Context.detach(peeked2);
-		final SampleTad peeked3 = (SampleTad)Context.get(SampleTad.class);
+		TadContext.detach(peeked2);
+		final SampleTad peeked3 = (SampleTad)TadContext.get(SampleTad.class);
 		assertEquals(name1, peeked3.getName());
 
-		Context.detach(peeked3);
-		assertNull(Context.getButDontThrow(SampleTad.class));
+		TadContext.detach(peeked3);
+		assertNull(TadContext.getButDontThrow(SampleTad.class));
 	}
 
 	@Test
@@ -204,18 +204,18 @@ public class TestTadContext implements Tad {
 		final SampleTad globalTad = new SampleTad("global");
 
 		// Publish a global
-		Context.publish(globalTad);
-		assertEquals(globalTad, Context.get(SampleTad.class));
+		TadContext.publish(globalTad);
+		assertEquals(globalTad, TadContext.get(SampleTad.class));
 
 		// Attach a TAD, this should hide the global
-		Context.attach(threadTad);
-		assertEquals(threadTad, Context.get(SampleTad.class));
+		TadContext.attach(threadTad);
+		assertEquals(threadTad, TadContext.get(SampleTad.class));
 
 		// Detach the TAD, this should expose the global again
-		Context.detach(threadTad);
-		assertEquals(globalTad, Context.get(SampleTad.class));
+		TadContext.detach(threadTad);
+		assertEquals(globalTad, TadContext.get(SampleTad.class));
 
-		Context.unpublish(globalTad);
+		TadContext.unpublish(globalTad);
 	}
 
 }

@@ -20,9 +20,9 @@ public class TestTadContextErrors {
 	public static class Started {
 		public static void main(String[] args) {
 			final SampleTad tad = new SampleTad("test");
-			Context.attach(tad);
+			TadContext.attach(tad);
 			if(args.length == 0) {
-				Context.detach(tad);
+				TadContext.detach(tad);
 			}
 		}
 	}
@@ -76,19 +76,19 @@ public class TestTadContextErrors {
 	@Test
 	public void testSingleAttach() {
 		final SampleTad tad = new SampleTad("test");
-		Context.attach(tad);
-		Context.detach(tad);
+		TadContext.attach(tad);
+		TadContext.detach(tad);
 	}
 
 	@Test
 	public void testDoubleAttach() {
 		final SampleTad tad = new SampleTad("test");
 		try {
-			Context.attach(tad);
-			Context.attach(tad);
+			TadContext.attach(tad);
+			TadContext.attach(tad);
 			fail();
 		} catch(final TadRuntimeException e) {
-			Context.detach(tad);
+			TadContext.detach(tad);
 		}
 	}
 }

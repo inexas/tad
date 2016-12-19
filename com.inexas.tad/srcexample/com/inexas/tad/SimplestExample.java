@@ -25,15 +25,15 @@ public class SimplestExample {
 
 	public static void main(String[] args) {
 		final MyTad myTad = new MyTad("hhughs");
-		Context.attach(myTad);
+		TadContext.attach(myTad);
 
 		whatever();
 
-		Context.detach(myTad);
+		TadContext.detach(myTad);
 	}
 
 	private static void whatever() {
-		final MyTad myTad = Context.get(MyTad.class);
+		final MyTad myTad = TadContext.get(MyTad.class);
 		System.out.println(myTad.userName);
 	}
 }

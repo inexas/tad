@@ -18,16 +18,16 @@ import java.util.Map.Entry;
  * context.
  *
  */
-public class Context {
+public class TadContext {
 	// todo Add searches ClassThatImplementsInterface getService(Interface)
 
 	/**
 	 * Elements are used to implement the experimental stacked-TAD capability
 	 */
-	private static class Element implements Tad {
+	private static class Link implements Tad {
 		final Tad tad, nextInChain;
 
-		Element(Tad tad, Tad nextInChain) {
+		Link(Tad tad, Tad nextInChain) {
 			this.tad = tad;
 			this.nextInChain = nextInChain;
 		}
@@ -49,9 +49,13 @@ public class Context {
 	 */
 
 	private final static Map<Class<?>, Tad> globalMap = new HashMap<>();
-
 	/** In honor of Pulp Fiction. */
+	
 	private final static String winstonWolfe = "Winston Wolfe";
+
+	private final static Set<Thread> cleaners = new HashSet<>();
+
+	private static boolean terminating = false;
 
 	/**
 	 * Thread ID's can and probably will be reused so the user must make sure
@@ -72,14 +76,23 @@ public class Context {
 		public synchronized void run() {
 			try {
 				thread.join();
-				final Map<Class<?>, Tad> tads = threadMap.get(threadId);
-				if(!tads.isEmpty()) {
-					throw new TadRuntimeException("TADs still attached: " + tads.keySet());
-				}
-				threadMap.remove(threadId);
+				checkTadsEmpty();
 			} catch(final InterruptedException e) {
-				throw new TadRuntimeException("Join interrupted", e);
+				if(terminating) {
+					checkTadsEmpty();
+				} else {
+					throw new TadRuntimeException("Join interrupted", e);
+				}
 			}
+		}
+
+		private void checkTadsEmpty() {
+			final Map<Class<?>, Tad> tads = threadMap.get(threadId);
+			if(!tads.isEmpty()) {
+				throw new TadRuntimeException("TADs still attached: " + tads.keySet());
+			}
+			threadMap.remove(threadId);
+
 		}
 	}
 
@@ -158,7 +171,7 @@ public class Context {
 	 *            The key class of the TAD to search for.
 	 * @param <T>
 	 *            A type implementing the Tad interface.
-	 * @return The TAD attached with the given keyClass or null.
+	 * @return The TAD attached to the given keyClass or null.
 	 */
 	public static <T extends Tad> T getButDontThrow(Class<? extends Tad> keyClass) {
 		return get(keyClass, false);
@@ -196,15 +209,15 @@ public class Context {
 			if(!found) {
 				throw new TadRuntimeException("No TAD for " + keyClass.getName());
 			}
-		} else if(removed.getClass() == Element.class) {
+		} else if(removed.getClass() == Link.class) {
 			// The TAD has been pushAttached...
-			final Element link = (Element)removed;
+			final Link link = (Link)removed;
 
 			if(link.tad != tad) {
 				throw new TadRuntimeException("TAD push ordering problem");
 			}
 
-			final Element nextInChain = (Element)link.nextInChain;
+			final Link nextInChain = (Link)link.nextInChain;
 			if(nextInChain != null) {
 				tads.put(keyClass, nextInChain);
 			}
@@ -240,9 +253,9 @@ public class Context {
 			throw new TadRuntimeException("No TAD for " + keyClass.getName());
 		}
 
-		if(removed.getClass() == Element.class) {
-			final Element link = (Element)removed;
-			final Element nextInChain = (Element)link.nextInChain;
+		if(removed.getClass() == Link.class) {
+			final Link link = (Link)removed;
+			final Link nextInChain = (Link)link.nextInChain;
 			if(nextInChain != null) {
 				tads.put(keyClass, nextInChain);
 			}
@@ -353,6 +366,21 @@ public class Context {
 	}
 
 	/**
+	 * In some cases you may need to manually terminate the cleaner threads. For
+	 * example Tomcat pools exec threads and reuses them. When it shuts down the
+	 * cleaner threads have not been terminated and so Tomcat issues a warning.
+	 * This method can be called to terminate all cleaner threads - in Tomcats
+	 * case in the servlet destroy method() for example.
+	 */
+	public static void terminate() {
+		terminating = true;
+		for(final Thread cleaner : cleaners) {
+			cleaner.interrupt();
+		}
+		cleaners.clear();
+	}
+
+	/**
 	 * This is the main workhorse for the three attach methods above.
 	 */
 	private static synchronized void attach(Class<?> keyClass, Tad tad, boolean stack) {
@@ -371,6 +399,8 @@ public class Context {
 
 			// Start a Cleaner...
 			final Thread cleaner = new Thread(new Cleaner(thread, threadId), winstonWolfe);
+			final boolean added = cleaners.add(cleaner);
+			assert added;
 			cleaner.start();
 
 			// Store the new TAD
@@ -383,8 +413,8 @@ public class Context {
 				// TAD exists for this keyClass
 				if(stack) {
 					// Add the new Element as first in chain...
-					final Element firstInChain = (Element)tads.get(keyClass);
-					final Element nextInChain = new Element(tad, firstInChain);
+					final Link firstInChain = (Link)tads.get(keyClass);
+					final Link nextInChain = new Link(tad, firstInChain);
 					tads.put(keyClass, nextInChain);
 				} else {
 					throw new TadRuntimeException(
@@ -393,7 +423,7 @@ public class Context {
 			} else { // No previous data
 				if(stack) {
 					// Add new first-in-chain element...
-					final Element firstInChain = new Element(tad, null);
+					final Link firstInChain = new Link(tad, null);
 					tads.put(keyClass, firstInChain);
 				} else {
 					tads.put(keyClass, tad);
@@ -427,9 +457,9 @@ public class Context {
 			if(tad == null) {
 				result = getPublished(keyClass, strict);
 			} else {
-				if(tad.getClass() == Element.class) {
+				if(tad.getClass() == Link.class) {
 					@SuppressWarnings("unchecked")
-					final T t = (T)((Element)tad).tad;
+					final T t = (T)((Link)tad).tad;
 					result = t;
 				} else {
 					@SuppressWarnings("unchecked")

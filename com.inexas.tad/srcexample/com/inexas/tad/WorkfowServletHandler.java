@@ -32,14 +32,14 @@ public class WorkfowServletHandler extends HttpServlet {
 		final SessionTad sessionTad = new SessionTad(
 				request.getParameter("user"),
 				UUID.randomUUID().toString());
-		Context.attach(sessionTad);
+		TadContext.attach(sessionTad);
 
-		Context.attach(ProcessArchiver.class, processArchiverImpl);
+		TadContext.attach(ProcessArchiver.class, processArchiverImpl);
 
 		workflowServer.handleRequest(action);
 
-		Context.detach(ProcessArchiver.class, processArchiverImpl);
-		Context.detach(sessionTad);
+		TadContext.detach(ProcessArchiver.class, processArchiverImpl);
+		TadContext.detach(sessionTad);
 	}
 }
 
@@ -49,13 +49,13 @@ class DeepInsideTheServer {
 	// ...
 
 	public void terminate(BusinessProcess process) {
-		final SessionTad sessionTad = Context.get(SessionTad.class);
+		final SessionTad sessionTad = TadContext.get(SessionTad.class);
 		eventLog.log(
 				sessionTad.userId,
 				sessionTad.timestamp,
 				"Process completed: " + process.getName());
 
-		final ProcessArchiver archiver = Context.get(ProcessArchiver.class);
+		final ProcessArchiver archiver = TadContext.get(ProcessArchiver.class);
 		archiver.archive(process);
 	}
 }
